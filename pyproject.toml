@@ -1,0 +1,20 @@
+[project]
+name = "linux-debug-env"
+version = "0.1.0"
+description = "OpenEnv Linux Debugging Environment"
+authors = [
+    { name = "Vikpurohit" }
+]
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "openai",
+    "openenv-core>=0.2.0"
+]
+
+[project.scripts]
+start = "api.server:app"
+
+[tool.openenv]
+env_class = "env.environment:LinuxDebugEnv"
