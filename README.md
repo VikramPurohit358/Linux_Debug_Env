@@ -1,3 +1,13 @@
+---
+title: Linux Debugging OpenEnv
+emoji: 🐧
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Linux Debugging Environment
 
 Linux debugging environment for AI agents with deterministic tasks, scoring, and a FastAPI interface.
