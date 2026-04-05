@@ -1,17 +1,11 @@
 """Deterministic inference runner for LinuxDebugEnv."""
 
-import os
-
 from openai import OpenAI
 
+from config import API_BASE_URL, HF_TOKEN, MODEL_NAME
 from env.environment import LinuxDebugEnv
 
-
-API_BASE_URL = os.getenv("API_BASE_URL")
-MODEL_NAME = os.getenv("MODEL_NAME")
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-client = OpenAI(base_url=API_BASE_URL, api_key="dummy")
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "dummy")
 
 
 def run():
