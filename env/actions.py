@@ -8,6 +8,11 @@ class ActionParser:
         """Parse action string into structured action dict."""
         action_text = "" if action is None else str(action).strip()
 
+        if action_text.startswith("kill_port "):
+            payload = action_text.replace("kill_port ", "", 1).strip()
+            port = int(payload) if payload.isdigit() else None
+            return {"type": "kill_port", "args": {"port": port}}
+
         if ":" not in action_text:
             return {"type": "invalid", "args": {"raw": action_text}}
 
@@ -35,6 +40,10 @@ class ActionParser:
 
         if action_type == "restart_service":
             return {"type": "restart_service", "args": {"service": payload}}
+
+        if action_type == "kill_port":
+            port = int(payload) if payload.isdigit() else None
+            return {"type": "kill_port", "args": {"port": port}}
 
         if action_type == "check_status":
             return {"type": "check_status", "args": {"service": payload}}
@@ -78,6 +87,12 @@ class ActionParser:
             if content is None:
                 return False, "write_file requires <path>|<content>"
             return True, ""
+
+        if action_type == "kill_port":
+            port = args.get("port")
+            if isinstance(port, int):
+                return True, ""
+            return False, "kill_port requires an integer port"
 
         if action_type in ("restart_service", "check_status"):
             service = (args.get("service") or "").strip()
@@ -125,6 +140,19 @@ class ActionExecutor:
                 return {
                     "output": f"Wrote {len(content)} bytes to {path}",
                     "error": "",
+                }
+
+            if action_type == "kill_port":
+                port = args.get("port")
+                if port in self.state.ports and self.state.ports.get(port) == "occupied":
+                    self.state.update_port(port, "free")
+                    return {
+                        "output": f"Freed port {port}",
+                        "error": "",
+                    }
+                return {
+                    "output": "",
+                    "error": f"Port {port} is not in use",
                 }
 
             if action_type == "restart_service":

@@ -65,7 +65,7 @@ def grader_score():
     """Return current score for the active task."""
     if env.current_task is None:
         return {"score": 0.0}
-    return {"score": env.grader.grade(env.state, env.current_task)}
+    return {"score": env.grader.grade(env.system_state, env.current_task)}
 
 
 @app.get("/baseline")
@@ -83,5 +83,5 @@ def run_baseline():
     for action in actions:
         env.step(action)
 
-    final_score = env.grader.grade(env.state, env.current_task)
+    final_score = env.grader.grade(env.system_state, env.current_task)
     return {"score": final_score}

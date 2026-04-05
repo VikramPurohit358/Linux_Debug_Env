@@ -42,7 +42,7 @@ def run():
             output = result.get("observation", {}).get("output", "")
             print(f"Output: {output}")
 
-        score = env.grader.grade(env.state, env.current_task)
+        score = env.grader.grade(env.system_state, env.current_task)
         print(f"[END] Score: {score}")
 
     env.close()

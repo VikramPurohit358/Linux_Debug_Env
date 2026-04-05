@@ -12,9 +12,9 @@ class LinuxDebugEnv:
     def __init__(self, config=None):
         """Initialize environment."""
         self.config = config or {}
-        self.state = SystemState()
+        self.system_state = SystemState()
         self.parser = ActionParser()
-        self.executor = ActionExecutor(state=self.state)
+        self.executor = ActionExecutor(state=self.system_state)
         self.tasks = TaskLibrary()
         self.grader = Grader()
         self.current_task = None
@@ -25,10 +25,10 @@ class LinuxDebugEnv:
         options = options or {}
         task_id = options.get('task_id', 'task_1')
 
-        self.state.reset()
-        self.executor.set_state(self.state)
+        self.system_state.reset()
+        self.executor.set_state(self.system_state)
         self.current_task = self.tasks.get_task(task_id)
-        self.current_task.setup(self.state)
+        self.current_task.setup(self.system_state)
         self.step_count = 0
 
         return {
@@ -43,7 +43,7 @@ class LinuxDebugEnv:
         """Execute action and return OpenEnv-style step result dict."""
         previous_progress = 0.0
         if self.current_task:
-            previous_progress = self.grader.grade(self.state, self.current_task)
+            previous_progress = self.grader.grade(self.system_state, self.current_task)
 
         parsed = self.parser.parse(action)
         is_valid, validation_error = self.parser.validate(parsed)
@@ -61,14 +61,10 @@ class LinuxDebugEnv:
 
         new_progress = previous_progress
         if self.current_task:
-            new_progress = self.grader.grade(self.state, self.current_task)
+            new_progress = self.grader.grade(self.system_state, self.current_task)
 
-        if new_progress == 1.0:
-            reward = 1.0
-            done = True
-        else:
-            reward = float(new_progress - previous_progress)
-            done = False
+        reward = float(new_progress - previous_progress)
+        done = new_progress == 1.0
 
         self.step_count += 1
 
@@ -86,7 +82,7 @@ class LinuxDebugEnv:
         }
 
     def state(self):
-        return self.state.to_dict()
+        return self.system_state.to_dict()
     
     def close(self):
         """Close environment."""
