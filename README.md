@@ -1,17 +1,3 @@
-This is already **very strong** — honestly better than 90% of submissions.
-
-I’m not going to rewrite it. I’ll **polish it surgically** so it feels:
-
-👉 more human
-👉 more intentional
-👉 slightly more “engineer voice”
-👉 stronger for judges scanning fast
-
----
-
-# ✨ FINAL POLISHED VERSION (USE THIS)
-
-```markdown
 ---
 title: Linux Debugging OpenEnv
 emoji: 🐧
@@ -26,22 +12,18 @@ pinned: false
 
 An OpenEnv-compatible environment where agents debug realistic Linux service failures through observable system state and actionable remediation steps.
 
----
-
 ## Why this matters
-
 Real production incidents rarely fail cleanly.
 
-- A service is down  
-- Logs hint at the root cause  
-- Config is slightly wrong  
-- A port is already in use  
+
+- A service is down
+- Logs hint at the root cause
+- Config is wrong
+- A port is already in use
 
 Fixing it requires **inspection → reasoning → action → verification**.
 
 This environment models that exact workflow — making it suitable for evaluating agents on **practical debugging tasks**, not synthetic benchmarks.
-
----
 
 ## What this environment simulates
 
@@ -53,28 +35,15 @@ This environment models that exact workflow — making it suitable for evaluatin
 
 Each action mutates system state deterministically.
 
----
-
 ## Task Design
 
-Three tasks with increasing difficulty:
+- **task_1 (easy):** service is stopped, restart correctly.
+- **task_2 (medium):** config points to an occupied port, fix config before restart.
+- **task_3 (hard):** diagnose via logs and choose valid remediation before restart.
 
-- **task_1 (easy)**  
-  Service is stopped → requires correct restart
-
-- **task_2 (medium)**  
-  Misconfigured port → requires editing config before restart
-
-- **task_3 (hard)**  
-  Requires diagnosis from logs + choosing a valid fix path (config change or port cleanup)
-
-The progression moves from direct action → **diagnosis-driven recovery**.
-
----
+Complexity increases from direct recovery to diagnosis-driven recovery.
 
 ## Action Space
-
-```
 
 run_command:<command>
 read_file:<path>
@@ -82,65 +51,56 @@ write_file:<path>|<content>
 kill_port <port>
 restart_service:<service>
 
-```
-
 Actions are structured, deterministic, and directly tied to system state changes.
-
----
 
 ## Reward Design
 
-- Reward is **progress-based**, not binary  
+- Reward is progress-based, not binary:
+
+```text
+reward = new_progress - previous_progress
 ```
 
-reward = new_progress - previous_progress
-
-````
-
-- Score levels:
-- `0.0` → no progress  
-- `0.5` → partial progress  
-- `1.0` → task solved  
+- Score levels are deterministic:
+  - `0.0` → no progress
+  - `0.5` → partial progress
+  - `1.0` → task solved
 
 This encourages agents to value **correct intermediate steps**, not just final success.
-
----
 
 ## Example Workflow
 
 A typical solution path:
 
-1. Check service status  
-2. Read logs  
-3. Identify root cause  
-4. Apply fix (update config or free port)  
-5. Restart service  
+1. Check service status
+2. Read logs
+3. Identify root cause
+4. Apply fix (update config or free port)
+5. Restart service
 6. Verify success (`score = 1.0`)
-
----
 
 ## API Endpoints
 
-- `GET /` → health + endpoint overview  
-- `POST /reset` → reset environment  
-- `POST /step` → execute one action (`{ "action": "..." }`)  
-- `GET /tasks` → list tasks  
-- `GET /grader` → current score  
-- `GET /baseline` → deterministic reference solution  
-
----
+- `GET /` → health + endpoint overview
+- `POST /reset` → reset environment
+- `POST /step` → execute one action (`{ "action": "..." }`)
+- `GET /tasks` → list tasks
+- `GET /grader` → current score
+- `GET /baseline` → deterministic reference solution
 
 ## How to Run
 
 ### Local
 
 ```bash
+cd linux_env
 uvicorn api.server:app --host 0.0.0.0 --port 7860
-````
+```
 
 ### Docker
 
 ```bash
+cd linux_env
 docker build -t linux-debug-env .
 docker run --rm -p 7860:7860 linux-debug-env
 ```
@@ -151,25 +111,17 @@ docker run --rm -p 7860:7860 linux-debug-env
 curl -X POST http://localhost:7860/reset
 ```
 
----
-
 ## Hugging Face Deployment
 
-* Runs as a **Docker Space**
-* FastAPI served via:
-
-  ```
-  uvicorn api.server:app
-  ```
-* Uses port `7860`
+- Runs as a **Docker Space**
+- FastAPI served via `uvicorn api.server:app`
+- Uses port `7860`
 
 Optional environment variables:
 
-* `API_BASE_URL`
-* `MODEL_NAME`
-* `HF_TOKEN`
-
----
+- `API_BASE_URL`
+- `MODEL_NAME`
+- `HF_TOKEN`
 
 ## Example Inference Output
 
@@ -184,6 +136,4 @@ Output: Freed port 9999
 [STEP] restart_service:app
 Output: Restarted app. Service is running.
 [END] Score: 1.0
-```
-
 ```
