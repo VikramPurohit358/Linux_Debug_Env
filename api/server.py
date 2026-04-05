@@ -18,6 +18,21 @@ app.state.model_name = MODEL_NAME
 app.state.hf_token = HF_TOKEN
 
 
+@app.get("/")
+def root():
+    """Health and endpoint discovery route."""
+    return {
+        "message": "Linux Debug Environment API is running",
+        "available_endpoints": [
+            "/reset",
+            "/step",
+            "/tasks",
+            "/grader",
+            "/baseline",
+        ],
+    }
+
+
 class StepRequest(BaseModel):
     """Request model for step endpoint."""
 
