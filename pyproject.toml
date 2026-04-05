@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-start = "api.server:app"
+server = "server.app:main"
 
 [tool.openenv]
 env_class = "env.environment:LinuxDebugEnv"
