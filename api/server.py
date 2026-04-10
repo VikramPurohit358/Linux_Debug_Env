@@ -34,7 +34,7 @@ def list_tasks():
 @app.get('/grader')
 def grader_score():
     if env.current_task is None:
-        return {'score': 0.0}
+        return {'score': 0.1}
     return {'score': env.grader.grade(env.system_state, env.current_task)}
 
 @app.get('/baseline')
