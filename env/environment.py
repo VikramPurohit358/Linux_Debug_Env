@@ -41,7 +41,7 @@ class LinuxDebugEnv:
     
     def step(self, action):
         """Execute action and return OpenEnv-style step result dict."""
-        previous_progress = 0.0
+        previous_progress = 0.1
         if self.current_task:
             previous_progress = self.grader.grade(self.system_state, self.current_task)
 
