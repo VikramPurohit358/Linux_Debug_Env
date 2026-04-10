@@ -3,6 +3,6 @@
 import os
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost")
-MODEL_NAME = os.getenv("MODEL_NAME", "dummy")
-HF_TOKEN = os.getenv("HF_TOKEN", "dummy")
+API_BASE_URL = os.environ.get("API_BASE_URL")
+API_KEY = os.environ.get("API_KEY")
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")

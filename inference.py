@@ -1,46 +1,81 @@
-"""Deterministic inference runner for LinuxDebugEnv."""
+"""LLM-driven inference runner for LinuxDebugEnv."""
 
 from openai import OpenAI
 
-from config import API_BASE_URL, HF_TOKEN, MODEL_NAME
+from config import API_BASE_URL, API_KEY, MODEL_NAME
 from env.environment import LinuxDebugEnv
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "dummy")
+if not API_BASE_URL or not API_KEY:
+    raise ValueError("Missing API_BASE_URL or API_KEY")
+
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY,
+)
+
+
+def select_next_action(observation, task_description, history):
+    history_text = "\n".join(
+        f"- Step {index + 1}: {item}" for index, item in enumerate(history)
+    )
+    if not history_text:
+        history_text = "- No previous actions"
+
+    prompt = (
+        "You are a Linux debugging agent. The system is broken.\n"
+        "Goal: fix the system so the service is healthy.\n"
+        f"Task: {task_description}\n\n"
+        "Observation:\n"
+        f"{observation}\n\n"
+        "Previous actions:\n"
+        f"{history_text}\n\n"
+        "Available actions:\n"
+        "* run_command:<cmd>\n"
+        "* read_file:<path>\n"
+        "* write_file:<path>|<content>\n"
+        "* kill_port <port>\n"
+        "* restart_service:<service>\n\n"
+        "Return ONLY the next best action."
+    )
+
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return (response.choices[0].message.content or "").strip().splitlines()[0].strip()
 
 
 def run():
-    """Run deterministic baseline for all tasks with strict print format."""
     env = LinuxDebugEnv()
-    task_actions = {
-        "task_1": [
-            "run_command:systemctl status app",
-            "run_command:cat /var/log/app.log",
-            "run_command:kill_port 9999",
-            "restart_service:app",
-        ],
-        "task_2": [
-            "run_command:systemctl status app",
-            "run_command:cat /var/log/app.log",
-            "write_file: /etc/app.conf|PORT=8080",
-            "restart_service:app",
-        ],
-        "task_3": [
-            "run_command:systemctl status app",
-            "run_command:cat /var/log/app.log",
-            "run_command:kill_port 9999",
-            "restart_service:app",
-        ],
-    }
+    max_steps = 10
+    min_llm_calls_per_task = 3
 
     for task_id in sorted(env.tasks.tasks.keys()):
         print(f"[START] Task: {task_id}")
-        env.reset(options={"task_id": task_id})
+        reset_result = env.reset(options={"task_id": task_id})
+        observation = reset_result.get("observation", {}).get("output", "")
+        task_description = env.current_task.description if env.current_task else ""
+        action_history = []
+        llm_calls = 0
+        done = False
 
-        for action in task_actions[task_id]:
+        for _ in range(max_steps):
+            action = select_next_action(
+                observation=observation,
+                task_description=task_description,
+                history=action_history,
+            )
+            llm_calls += 1
+            action_history.append(action)
             print(f"[STEP] {action}")
             result = env.step(action)
             output = result.get("observation", {}).get("output", "")
             print(f"Output: {output}")
+
+            observation = output
+            done = bool(result.get("done", False))
+            if done and llm_calls >= min_llm_calls_per_task:
+                break
 
         score = env.grader.grade(env.system_state, env.current_task)
         print(f"[END] Score: {score}")

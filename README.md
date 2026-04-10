@@ -120,8 +120,8 @@ curl -X POST http://localhost:7860/reset
 Optional environment variables:
 
 - `API_BASE_URL`
+- `API_KEY`
 - `MODEL_NAME`
-- `HF_TOKEN`
 
 ## Example Inference Output
 
