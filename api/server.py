@@ -5,10 +5,10 @@ from pydantic import BaseModel
 
 try:
     from config import API_BASE_URL, HF_TOKEN, MODEL_NAME
-	from env.environment import LinuxDebugEnv
+    from env.environment import LinuxDebugEnv
 except ImportError:  # pragma: no cover
     from ..config import API_BASE_URL, HF_TOKEN, MODEL_NAME
-	from ..env.environment import LinuxDebugEnv
+    from ..env.environment import LinuxDebugEnv
 
 
 app = FastAPI(title="Linux Debugging Environment API")
