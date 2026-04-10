@@ -1,8 +1,8 @@
 class Grader:
     CONFIG_PATH = '/etc/app.conf'
-    MIN_SCORE = 0.1
+    MIN_SCORE = 0
     PARTIAL_SCORE = 0.5
-    SUCCESS_SCORE = 0.9
+    SUCCESS_SCORE = 1
 
     def grade(self, state, task):
         criteria = task.get_success_criteria()
