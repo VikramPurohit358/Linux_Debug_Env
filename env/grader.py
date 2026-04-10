@@ -5,9 +5,9 @@ class Grader:
     """Evaluates task completion and assigns rewards."""
 
     CONFIG_PATH = "/etc/app.conf"
-    MIN_SCORE = 0.01
+    MIN_SCORE = 0.1
     PARTIAL_SCORE = 0.5
-    SUCCESS_SCORE = 0.99
+    SUCCESS_SCORE = 0.9
 
     def grade(self, state, task):
         criteria = task.get_success_criteria()
