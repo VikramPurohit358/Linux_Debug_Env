@@ -64,7 +64,7 @@ class LinuxDebugEnv:
             new_progress = self.grader.grade(self.system_state, self.current_task)
 
         reward = float(new_progress - previous_progress)
-        done = new_progress == 1.0
+        done = bool(self.current_task and self.grader.evaluate(self.system_state, self.current_task))
 
         self.step_count += 1
 

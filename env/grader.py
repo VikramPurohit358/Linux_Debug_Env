@@ -5,9 +5,11 @@ class Grader:
     """Evaluates task completion and assigns rewards."""
 
     CONFIG_PATH = "/etc/app.conf"
+    MIN_SCORE = 0.01
+    PARTIAL_SCORE = 0.5
+    SUCCESS_SCORE = 0.99
 
     def grade(self, state, task):
-        """Return deterministic score in {0.0, 0.5, 1.0}."""
         criteria = task.get_success_criteria()
 
         service_running = state.services.get("app") == criteria.get("service", "running")
@@ -22,19 +24,19 @@ class Grader:
         remediation_ok = config_matches_required or (allow_free_port_path and conflict_cleared)
 
         if service_running and logs_ok and remediation_ok:
-            return 1.0
+            return self.SUCCESS_SCORE
 
         if remediation_ok and not service_running:
-            return 0.5
+            return self.PARTIAL_SCORE
 
         if criteria.get("requires_logs_read", False) and logs_ok and remediation_ok:
-            return 0.5
+            return self.PARTIAL_SCORE
 
-        return 0.0
+        return self.MIN_SCORE
     
     def evaluate(self, state, task):
         """Check if task is complete."""
-        return self.grade(state, task) == 1.0
+        return self.grade(state, task) >= self.SUCCESS_SCORE
 
     def _config_port(self, state):
         """Extract configured PORT from /etc/app.conf."""
