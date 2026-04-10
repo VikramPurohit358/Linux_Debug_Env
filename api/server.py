@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 try:
-    from config import API_BASE_URL, API_KEY, MODEL_NAME
+    from config import API_BASE_URL, HF_TOKEN, MODEL_NAME
 	from env.environment import LinuxDebugEnv
 except ImportError:  # pragma: no cover
-    from ..config import API_BASE_URL, API_KEY, MODEL_NAME
+    from ..config import API_BASE_URL, HF_TOKEN, MODEL_NAME
 	from ..env.environment import LinuxDebugEnv
 
 
@@ -15,7 +15,7 @@ app = FastAPI(title="Linux Debugging Environment API")
 env = LinuxDebugEnv()
 app.state.api_base_url = API_BASE_URL
 app.state.model_name = MODEL_NAME
-app.state.api_key = API_KEY
+app.state.hf_token = HF_TOKEN
 
 
 @app.get("/")

@@ -2,15 +2,15 @@
 
 from openai import OpenAI
 
-from config import API_BASE_URL, API_KEY, MODEL_NAME
+from config import API_BASE_URL, HF_TOKEN, MODEL_NAME
 from env.environment import LinuxDebugEnv
 
-if not API_BASE_URL or not API_KEY:
-    raise ValueError("Missing API_BASE_URL or API_KEY")
+if not API_BASE_URL or not HF_TOKEN:
+    raise ValueError("Missing API_BASE_URL or HF_TOKEN")
 
 client = OpenAI(
     base_url=API_BASE_URL,
-    api_key=API_KEY,
+    api_key=HF_TOKEN,
 )
 
 
