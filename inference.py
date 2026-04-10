@@ -1,4 +1,6 @@
-"""LLM-driven inference runner for LinuxDebugEnv."""
+
+
+import time
 
 from openai import OpenAI
 
@@ -38,11 +40,35 @@ def select_next_action(observation, task_description, history):
         "Return ONLY the next best action."
     )
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return (response.choices[0].message.content or "").strip().splitlines()[0].strip()
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            raw_content = (response.choices[0].message.content or "").strip()
+            if raw_content.startswith("```"):
+                raw_content = "\n".join(
+                    line
+                    for line in raw_content.splitlines()
+                    if not line.strip().startswith("```")
+                ).strip()
+
+            candidate_lines = [line.strip() for line in raw_content.splitlines() if line.strip()]
+            if not candidate_lines:
+                raise ValueError("LLM returned empty action")
+
+            action = candidate_lines[0]
+            if action.lower().startswith("action:"):
+                action = action.split(":", 1)[1].strip()
+            return action
+        except Exception as exc:
+            last_error = exc
+            if attempt < 2:
+                time.sleep(1)
+
+    raise RuntimeError(f"LLM request failed after retries: {last_error}")
 
 
 def run():
@@ -60,11 +86,17 @@ def run():
         done = False
 
         for _ in range(max_steps):
-            action = select_next_action(
-                observation=observation,
-                task_description=task_description,
-                history=action_history,
-            )
+            try:
+                action = select_next_action(
+                    observation=observation,
+                    task_description=task_description,
+                    history=action_history,
+                )
+            except Exception as exc:
+                print("[STEP] llm_request_failed")
+                print(f"Output: {exc}")
+                break
+
             llm_calls += 1
             action_history.append(action)
             print(f"[STEP] {action}")
