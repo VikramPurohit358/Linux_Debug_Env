@@ -35,7 +35,9 @@ def list_tasks():
 def grader_score():
     if env.current_task is None:
         return {'score': 0.1}
-    return {'score': env.grader.grade(env.system_state, env.current_task)}
+    score = env.grader.grade(env.system_state, env.current_task)
+    score = min(env.grader.SUCCESS_SCORE, max(env.grader.MIN_SCORE, float(score)))
+    return {'score': score}
 
 @app.get('/baseline')
 def run_baseline():
@@ -44,4 +46,5 @@ def run_baseline():
     for action in actions:
         env.step(action)
     final_score = env.grader.grade(env.system_state, env.current_task)
+    final_score = min(env.grader.SUCCESS_SCORE, max(env.grader.MIN_SCORE, float(final_score)))
     return {'score': final_score}

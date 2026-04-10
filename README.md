@@ -62,9 +62,9 @@ reward = new_progress - previous_progress
 ```
 
 - Score levels are deterministic:
-  - `0.0` → no progress
+  - `0.1` → no/low progress
   - `0.5` → partial progress
-  - `1.0` → task solved
+  - `0.9` → task solved
 
 This encourages agents to value **correct intermediate steps**, not just final success.
 
@@ -77,7 +77,7 @@ A typical solution path:
 3. Identify root cause
 4. Apply fix (update config or free port)
 5. Restart service
-6. Verify success (`score = 1.0`)
+6. Verify success (`score = 0.9`)
 
 ## API Endpoints
 
@@ -135,5 +135,5 @@ Output: ERROR: Port 9999 already in use
 Output: Freed port 9999
 [STEP] restart_service:app
 Output: Restarted app. Service is running.
-[END] Score: 1.0
+[END] Score: 0.9
 ```
