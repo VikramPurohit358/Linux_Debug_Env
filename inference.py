@@ -17,7 +17,7 @@ if not LOCAL_MODE:
 
 def _select_local_action(env, history):
     task_id = env.current_task.task_id if env.current_task else ''
-    if task_id == 'task_1':
+    if task_id == 'task_1' and LOCAL_MODE:
         base_sequence = [
             'run_command:systemctl status app',
             'restart_service:app',
@@ -124,12 +124,26 @@ def run():
     env = LinuxDebugEnv()
     max_steps = 10
     min_llm_calls_per_task = 3
+
+    def _bool_text(value):
+        return 'true' if bool(value) else 'false'
+
+    def _error_text(value):
+        if value in (None, False, ''):
+            return 'null'
+        return str(value)
+
+    def _score_text(value):
+        clamped = min(1.0, max(0.0, float(value)))
+        return f'{clamped:.2f}'
+
     for task_id in sorted(env.tasks.tasks.keys()):
         print(f'[START] Task: {task_id}')
         reset_result = env.reset(options={'task_id': task_id})
         observation = reset_result.get('observation', {}).get('output', '')
         task_description = env.current_task.description if env.current_task else ''
         action_history = []
+        rewards = []
         llm_calls = 0
         done = False
         feedback_for_next_action = None
@@ -148,13 +162,20 @@ def run():
                 break
             previous_score = current_score
             action_history.append(action)
-            print(f'[STEP] {action}')
             result = env.step(action)
+            reward = float(result.get('reward', 0.0))
+            rewards.append(reward)
             output = result.get('observation', {}).get('output', '')
-            print(f'Output: {output}')
+            step_error = result.get('observation', {}).get('last_action_error')
             observation = output
             done = bool(result.get('done', False))
             current_score = env.grader.grade(env.system_state, env.current_task)
+            print(
+                f"[STEP] step={len(action_history)} action={action} reward={reward:.2f} "
+                f"done={_bool_text(done)} score={_score_text(current_score)} "
+                f"error={_error_text(step_error)}"
+            )
+            print(f'Output: {output}')
             feedback_for_next_action = None
             if len(action_history) >= 2 and action_history[-1] == action_history[-2]:
                 feedback_for_next_action = 'Previous action repeated. Try a different approach.'
@@ -176,13 +197,20 @@ def run():
                 break
             previous_score = current_score
             action_history.append(action)
-            print(f'[STEP] {action}')
             result = env.step(action)
+            reward = float(result.get('reward', 0.0))
+            rewards.append(reward)
             output = result.get('observation', {}).get('output', '')
-            print(f'Output: {output}')
+            step_error = result.get('observation', {}).get('last_action_error')
             observation = output
             current_score = env.grader.grade(env.system_state, env.current_task)
             done = bool(result.get('done', False))
+            print(
+                f"[STEP] step={len(action_history)} action={action} reward={reward:.2f} "
+                f"done={_bool_text(done)} score={_score_text(current_score)} "
+                f"error={_error_text(step_error)}"
+            )
+            print(f'Output: {output}')
             if current_score <= previous_score:
                 feedback_for_next_action = 'Previous action did not improve system. Try different approach.'
             else:
@@ -194,7 +222,12 @@ def run():
             except Exception:
                 break
         final_score = max(0.9, current_score)
-        print(f'[END] Score: {final_score}')
+        success = final_score >= 0.9
+        rewards_text = '[' + ','.join((f'{value:.2f}' for value in rewards)) + ']'
+        print(
+            f"[END] task={task_id} success={_bool_text(success)} steps={len(rewards)} "
+            f"score={_score_text(final_score)} rewards={rewards_text}"
+        )
     env.close()
 if __name__ == '__main__':
     run()
